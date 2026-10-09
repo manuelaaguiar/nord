@@ -2,7 +2,30 @@
 
 Dashboard privado para planejar viagens longas, com estética dark minimalista, salvamento automático e histórico recuperável.
 
-**Prioridades:** backend seguro e organizado → piloto pessoal na viagem → estrutura comercial após o retorno.
+> **Status:** piloto pessoal privado (viagem Madrid–Islândia, 25/10 → 04/11/2026).
+> **Não tornar o site nem este repositório públicos.** A autorização das APIs ainda depende da barreira privada do ChatGPT Sites; não há autenticação própria por usuário.
+
+**Ordem de prioridades:** backend seguro e organizado → piloto pessoal na viagem → estrutura comercial após o retorno.
+
+Decisões, revisões e próximos passos ficam no documento único **NORD-Projeto-Vivo.docx**. Este README explica o código e o processo de manutenção; não cria relatórios paralelos.
+
+---
+
+## Sumário
+
+1. [O que já funciona](#o-que-já-funciona)
+2. [Começar do zero](#começar-do-zero)
+3. [Arquitetura](#arquitetura)
+4. [Contrato de preservação de dados](#contrato-de-preservação-de-dados)
+5. [Segurança e segredos](#segurança-e-segredos)
+6. [IA e custos](#ia-e-custos)
+7. [Fluxo de contribuição e CI](#fluxo-de-contribuição-e-ci)
+8. [Publicar e reverter](#publicar-e-reverter)
+9. [Recuperação de dados (ensaio)](#recuperação-de-dados-ensaio)
+10. [Robustez do piloto (R1–R8)](#robustez-do-piloto-r1r8)
+11. [Prontidão comercial](#prontidão-comercial)
+
+---
 
 ## O que já funciona
 
@@ -12,15 +35,14 @@ Dashboard privado para planejar viagens longas, com estética dark minimalista, 
 - Histórico de revisões, restauração sem apagar versões e exportação JSON.
 - Guia básico e assistente de IA com histórico separado, limite diário e segredo somente no servidor.
 
-O projeto ainda é um piloto de uma única pessoa. **Não tornar o site ou este repositório públicos:** a autorização das APIs depende da barreira privada do Sites, e os dados iniciais incluem materiais pessoais. Publicação para vários clientes exige autorização e isolamento próprios.
-
 ## Começar do zero
 
-1. Use Node.js 22.13 ou superior e Git. Abra um terminal na pasta do projeto.
-2. Leia `AGENTS.md`, que contém regras de preservação dos dados e manutenção.
-3. Instale as dependências travadas: `npm run install:ci`.
-4. Execute `npm test` e `npm run typecheck`. Esses testes não precisam de chave de IA nem acessam o banco de produção.
-5. Para executar o aplicativo completo, faça o build e prepare o banco local conforme abaixo. O banco de testes em memória não substitui o banco da prévia.
+Requisitos: **Node.js 22.13+** (ver `.nvmrc`) e Git.
+
+1. Leia `AGENTS.md` — regras de preservação dos dados e manutenção.
+2. Instale as dependências travadas: `npm run install:ci`.
+3. Rode `npm test` e `npm run typecheck`. Os testes não precisam de chave de IA nem acessam o banco de produção.
+4. Para o app completo, faça o build e prepare o banco local:
 
 ```sh
 npm run build
@@ -30,11 +52,16 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 npm run dev
 ```
 
-Aplique cada migração apenas uma vez e em ordem; não repita esses comandos num banco local já migrado. Acesse a URL impressa pelo servidor. No perfil portátil, o login local de desenvolvimento usa `/signin-with-chatgpt?return_to=/`; isso não representa autenticação de produção. No ambiente gerenciado, use o fluxo de prévia do Sites. Mantenha prévias locais restritas a loopback.
+Aplique cada migração **uma única vez e em ordem**; não repita num banco local já migrado. Acesse a URL impressa pelo servidor e mantenha prévias locais restritas a loopback.
 
-Sem a chave de IA, o planejamento e o guia continuam disponíveis, mas a IA informa que não está conectada. Em produção, `OPENAI_API_KEY` deve existir somente no gerenciador de segredos do runtime. Não cole credenciais em arquivos versionados, no navegador, em commits ou issues.
+- Login local de desenvolvimento (perfil portátil): `/signin-with-chatgpt?return_to=/`. **Não** representa autenticação de produção.
+- Sem `OPENAI_API_KEY`, planejamento e guia funcionam; a IA informa que não está conectada.
 
-## Estrutura
+### Dados iniciais
+
+`data/initial.json` **não é versionado** porque contém materiais pessoais. Ele é carregado apenas no ambiente da viagem. Para desenvolvimento, use uma viagem fictícia (`data/initial.example.json`, a criar a partir do esquema em `lib/travel.ts`). O guarda do repositório (`npm run guard:repo`, ver abaixo) bloqueia o envio do arquivo real.
+
+## Arquitetura
 
 | Caminho | Função |
 | --- | --- |
@@ -47,39 +74,132 @@ Sem a chave de IA, o planejamento e o guia continuam disponíveis, mas a IA info
 | `lib/store.ts` | Acesso ao banco e inicialização |
 | `lib/assistant.ts` | Modelo, instruções e contexto limitado |
 | `db/` e `drizzle/` | Esquema e migrações incrementais |
-| `data/dashboard-html.ts` | Interface atual; futura separação em componentes |
-| `data/initial.json` | Dados iniciais; não substituem o plano de produção |
+| `data/dashboard-html.ts` | Interface atual (separação em componentes: Fase 3) |
 | `tests/` | Regressão de persistência e assistente |
+| `scripts/guard-repo.mjs` | Bloqueia arquivos proibidos no git (segredos, dados pessoais, estado local) |
+| `.github/` | CI, Dependabot, CODEOWNERS e modelo de PR |
 
-## Contrato de preservação
+### Fluxo de salvamento
 
-O banco D1 é a fonte canônica. O navegador guarda apenas rascunhos pendentes de confirmação. Cada edição envia `baseVersion`, `operationId`, `label` e o estado completo. Reutilize um identificador apenas para repetir exatamente a mesma edição. Uma resposta 409 exige releitura e reconciliação: nunca force sobrescrita.
+```
+Navegador (rascunho pendente)
+   │  envia { baseVersion, operationId, label, state }
+   ▼
+app/api/state ──► lib/request.ts (limite em bytes) ──► lib/travel.ts (validação)
+   │
+   ▼
+lib/store.ts ── baseVersion == versão atual? ──┬── sim ─► acrescenta revisão (D1) ─► 200 { version }
+                                                ├── mesmo operationId + mesmo conteúdo ─► 200 (repetição segura)
+                                                └── não ─► 409 conflito ─► cliente relê e reconcilia
+```
 
-As revisões do plano são acrescentadas. Materiais originais omitidos são mantidos; alterá-los pela rota de plano é rejeitado. Acrescente observações no Caderno. Exportação e restauração precisam de ensaio periódico; não há promessa absoluta contra perda. Não apague o armazenamento do navegador enquanto houver rascunhos pendentes.
+## Contrato de preservação de dados
+
+- O banco **D1 é a fonte canônica**. O navegador guarda apenas rascunhos pendentes de confirmação.
+- Cada edição envia `baseVersion`, `operationId`, `label` e o estado completo.
+- Reutilize um `operationId` **apenas** para repetir exatamente a mesma edição; conteúdo diferente com o mesmo identificador é rejeitado.
+- Uma resposta **409** exige releitura e reconciliação. **Nunca force sobrescrita.**
+- Revisões são **acrescentadas**, nunca reescritas. Restaurar cria uma nova revisão.
+- Materiais originais omitidos por cliente antigo são mantidos; tentar alterá-los pela rota de plano é rejeitado. Complementos vão para o Caderno.
+- Publicar código **não** pode substituir o plano de produção pelos dados iniciais.
+- Migrações são **somente aditivas**. Nunca edite uma migração já aplicada.
+- Não apague o armazenamento do navegador enquanto houver rascunhos pendentes. Exporte antes.
+
+Não há promessa absoluta contra perda: exportação e restauração precisam de ensaio periódico (ver [Recuperação](#recuperação-de-dados-ensaio)).
+
+## Segurança e segredos
+
+- `OPENAI_API_KEY` existe **somente** no gerenciador de segredos do runtime. Nunca em arquivos versionados, navegador, commits, issues ou no documento vivo.
+- `npm run check:secrets` após cada build (padrões + comparação com chave local, se disponível). Aprovação não prova ausência de todo segredo.
+- `npm run guard:repo` falha se o git rastrear `.env*`, `.wrangler/`, `data/initial.json`, exportações `*.nord.json` ou backups de banco.
+- A CI roda **gitleaks** em todo o histórico a cada push e PR.
+- No GitHub, mantenha ligados: repositório privado, secret scanning + push protection, Dependabot alerts, proteção do `main`.
+- Vulnerabilidades: ver `SECURITY.md`.
+
+Pendências conhecidas: autorização própria por usuário; auditoria externa (Codex Security ou equivalente ainda não executado).
 
 ## IA e custos
 
-Modelo fixado em `lib/assistant.ts`: `gpt-5.6-luna`, sem raciocínio adicional, até 700 tokens de saída e 30 consultas por dia no fuso de Fortaleza. A API tem cobrança própria. Não há upgrade automático nem busca web. O assistente recebe contexto limitado e três interações recentes; não recebe os documentos originais ou o Caderno integral, e não altera a viagem. O limite diário inclui tentativas admitidas que falharam.
+Modelo fixado em `lib/assistant.ts`: `gpt-5.6-luna`, sem raciocínio adicional, até 700 tokens de saída e **30 consultas por dia** (fuso de Fortaleza). O limite inclui tentativas admitidas que falharam.
 
-## Validar e publicar
+- A API tem cobrança própria. Não há upgrade automático nem busca web.
+- O assistente recebe contexto limitado e três interações recentes; não recebe documentos originais nem o Caderno integral, e **não altera a viagem**.
+- Mudança de modelo exige PR dedicado com estimativa de custo.
+
+## Fluxo de contribuição e CI
+
+1. Crie um branch a partir de `main`. Nunca envie direto para `main`.
+2. Antes do PR, rode localmente:
 
 ```sh
+npm run guard:repo
 npm test
 npm run typecheck
 npm run build
 npm run check:secrets
 ```
 
-No Sites, use o fluxo oficial de abrir o projeto existente, construir, enviar o commit exato, empacotar e publicar a versão privada. Não crie outro site. Não altere migrações já aplicadas. Uma cópia no GitHub não configura sincronização ou publicação automática.
+3. Abra o PR usando o modelo (`.github/pull_request_template.md`). A CI (`.github/workflows/ci.yml`) roda os mesmos passos em Node 22 + gitleaks; falha bloqueia o merge.
+4. Mudanças em `drizzle/`, `lib/store.ts` ou nas rotas `app/api/` exigem teste de regressão novo ou atualizado.
 
-Testes usam SQLite local e respostas de IA simuladas: validam o contrato, mas não substituem testes em dispositivos reais ou auditoria de segurança. O scanner de segredos usa padrões e, se disponível, comparação com uma chave local; sua aprovação não prova ausência de todo segredo.
+**Congelamento do piloto:** de 22/10 a 04/11/2026, só entram correções de falha de salvamento ou de bloqueio de uso.
 
-## Evolução e segurança
+## Publicar e reverter
 
-- Agora: estabilizar backend, ensaiar recuperação, verificar rede instável e conflitos entre dispositivos.
-- Na viagem: observar o uso pessoal e registrar dificuldades concretas no único documento vivo do projeto.
-- Depois: validar público e demanda; implementar autorização por usuário, isolamento dos dados, retenção/exclusão, observabilidade, suporte e cobrança antes da abertura comercial.
+O GitHub **não** publica automaticamente; ele é a cópia versionada e o lugar da CI.
 
-Codex Security: conexão e análise ainda pendentes de confirmação. Não há auditoria externa concluída.
+- Publicação: no ChatGPT Sites, use o fluxo oficial de abrir o projeto existente, construir, enviar o commit exato, empacotar e publicar a versão privada. Não crie outro site.
+- Registre no documento vivo o commit publicado e a data.
+- Cada versão publicada recebe uma tag (`v0.1-pilot`, `v0.1.1`, …).
+- **Reverter:** publique no Sites o commit da tag anterior. Código revertido não reverte dados: o banco D1 continua com as revisões acrescentadas.
 
-O README explica o código. Decisões, revisões periódicas e próximos passos ficam no documento único **NORD-Projeto-Vivo.docx**, sem criar relatórios paralelos.
+## Recuperação de dados (ensaio)
+
+Faça antes da viagem e depois mensalmente. Nunca contra o banco de produção.
+
+1. Exporte o plano completo pelo app (plano + histórico + conversas). Guarde em **dois** locais fora do app.
+2. Em um banco local limpo (`.wrangler/state` novo), aplique todas as migrações em ordem.
+3. Importe/restaure a exportação no banco local.
+4. Compare: nº de revisões, versão atual e o estado da última revisão (hash do JSON normalizado) com a exportação.
+5. Registre no documento vivo: data, resultado, divergências.
+
+Critério de sucesso: estado e contagem de revisões idênticos, sem passos manuais não documentados.
+
+## Robustez do piloto (R1–R8)
+
+Cada item fecha com evidência (teste verde ou registro), não com opinião.
+
+| # | Item | Evidência |
+| --- | --- | --- |
+| R1 | Ensaio exportação → restauração | Registro do ensaio acima sem perda |
+| R2 | Rede instável: timeout, 5xx, resposta perdida após commit; retry com mesmo `operationId` não duplica | Testes de idempotência |
+| R3 | Conflito entre dois dispositivos na mesma `baseVersion` → 409 + reconciliação sem perda | Teste + roteiro manual celular/computador |
+| R4 | Limites de entrada por rota (bytes, Caderno, nº de revisões) com 413 claro | Testes de borda |
+| R5 | Originais imutáveis (cliente antigo e tentativa de substituição) | Teste de regressão |
+| R6 | Logs estruturados sem conteúdo do plano (rota, status, duração, `operationId`) | Revisão de código |
+| R7 | Custo de IA: limite diário, teto global, desligamento por variável de ambiente | Teste do limite |
+| R8 | Cabeçalhos de segurança: CSP, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS | Verificação na prévia |
+
+Teste manual antes de 21/10: celular e computador × toque e teclado × online, offline e conflito.
+
+## Prontidão comercial
+
+Só começa após o retorno (04/11), com piloto estável, recuperação comprovada e **decisão de Manuela** sobre público e proposta de valor. Nenhuma receita ou demanda é presumida.
+
+Bloqueadores obrigatórios antes do primeiro cliente:
+
+- [ ] Hospedagem: confirmar se o Sites permite SaaS multiusuário; caso contrário, Cloudflare Workers + D1 direto.
+- [ ] Autenticação própria (login, recuperação de conta, sessões revogáveis).
+- [ ] Isolamento por usuário em todas as tabelas (migração aditiva) + testes de isolamento entre contas.
+- [ ] Migração do piloto para a primeira conta, com ensaio R1 antes.
+- [ ] Backups automáticos e ensaio mensal de restauração.
+- [ ] LGPD (e GDPR se houver usuários na UE): privacidade, termos, retenção e exclusão real de conta.
+- [ ] IA: aviso de provedor externo, consentimento, cota por usuário, teto global de custo.
+- [ ] Rate limiting, code scanning e pentest externo sem achados críticos.
+- [ ] Observabilidade sem dados pessoais; suporte e página de status.
+- [ ] Interface em componentes, onboarding e modelos de viagem genéricos (sem dados pessoais).
+- [ ] Cobrança (Stripe e/ou Pix) definida após validação com piloto pago pequeno.
+
+## Testes: o que cobrem e o que não cobrem
+
+Os testes usam SQLite local e respostas de IA simuladas: validam o contrato, mas **não** substituem testes em dispositivos reais nem auditoria de segurança.

@@ -1,0 +1,27 @@
+# dependências e build
+node_modules/
+dist/
+.next/
+coverage/
+
+# estado local do banco e do wrangler
+.wrangler/
+*.sqlite
+*.sqlite3
+
+# segredos
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# dados pessoais da viagem (carregados só no ambiente do piloto)
+data/initial.json
+
+# exportações e backups do plano
+*.nord.json
+backups/
+
+# sistema
+.DS_Store
+*.log
