@@ -15,7 +15,7 @@
 
 ## Verificação
 
-- [ ] `npm run guard:repo`
+- [ ] `node scripts/guard-repo.mjs`
 - [ ] `npm test`
 - [ ] `npm run typecheck`
 - [ ] `npm run build` + `npm run check:secrets`

@@ -59,7 +59,7 @@ Aplique cada migração **uma única vez e em ordem**; não repita num banco loc
 
 ### Dados iniciais
 
-`data/initial.json` **não é versionado** porque contém materiais pessoais. Ele é carregado apenas no ambiente da viagem. Para desenvolvimento, use uma viagem fictícia (`data/initial.example.json`, a criar a partir do esquema em `lib/travel.ts`). O guarda do repositório (`npm run guard:repo`, ver abaixo) bloqueia o envio do arquivo real.
+`data/initial.json` **não é versionado** porque contém materiais pessoais. Ele é carregado apenas no ambiente da viagem. Para desenvolvimento, use uma viagem fictícia (`data/initial.example.json`, a criar a partir do esquema em `lib/travel.ts`). O guarda do repositório (`node scripts/guard-repo.mjs`, ver abaixo) bloqueia o envio do arquivo real.
 
 ## Arquitetura
 
@@ -111,7 +111,7 @@ Não há promessa absoluta contra perda: exportação e restauração precisam d
 
 - `OPENAI_API_KEY` existe **somente** no gerenciador de segredos do runtime. Nunca em arquivos versionados, navegador, commits, issues ou no documento vivo.
 - `npm run check:secrets` após cada build (padrões + comparação com chave local, se disponível). Aprovação não prova ausência de todo segredo.
-- `npm run guard:repo` falha se o git rastrear `.env*`, `.wrangler/`, `data/initial.json`, exportações `*.nord.json` ou backups de banco.
+- `node scripts/guard-repo.mjs` falha se o git rastrear `.env*`, `.wrangler/`, `data/initial.json`, exportações `*.nord.json` ou backups de banco.
 - A CI roda **gitleaks** em todo o histórico a cada push e PR.
 - No GitHub, mantenha ligados: repositório privado, secret scanning + push protection, Dependabot alerts, proteção do `main`.
 - Vulnerabilidades: ver `SECURITY.md`.
@@ -132,7 +132,7 @@ Modelo fixado em `lib/assistant.ts`: `gpt-5.6-luna`, sem raciocínio adicional, 
 2. Antes do PR, rode localmente:
 
 ```sh
-npm run guard:repo
+node scripts/guard-repo.mjs
 npm test
 npm run typecheck
 npm run build
