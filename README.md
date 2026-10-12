@@ -110,8 +110,8 @@ Não há promessa absoluta contra perda: exportação e restauração precisam d
 
 - `OPENAI_API_KEY` existe **somente** no gerenciador de segredos do runtime. Nunca em arquivos versionados, navegador, commits, issues ou no documento vivo.
 - `npm run check:secrets` após cada build (padrões + comparação com chave local, se disponível). Aprovação não prova ausência de todo segredo.
-- `node scripts/guard-repo.mjs` falha se o git rastrear `.env*`, `.wrangler/`, `data/initial.json`, exportações `*.nord.json` ou backups de banco.
-- A CI roda **gitleaks** em todo o histórico a cada push e PR.
+- `node scripts/guard-repo.mjs` falha se o git rastrear `.env*`, `.dev.vars*`, `.wrangler/`, `data/initial.json`, exportações `*.nord.json` ou backups de banco.
+- A CI roda **gitleaks** em todo o histórico em cada PR e em cada push para `main`. Push em outro branch sem PR aberto não é verificado: rode `bash .claude/skills/run-nord/check.sh` antes.
 - No GitHub, mantenha ligados: repositório privado, secret scanning + push protection, Dependabot alerts, proteção do `main`.
 - Vulnerabilidades: ver `SECURITY.md`.
 

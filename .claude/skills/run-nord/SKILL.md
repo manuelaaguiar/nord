@@ -11,7 +11,7 @@ Caminhos relativos à raiz do repositório.
 
 ## Pré-requisitos
 
-Node 22 (`.nvmrc`), `git`, `curl`. Na primeira execução, o script baixa o gitleaks 8.18.4 e o actionlint 1.7.1 (as mesmas versões da CI) para `~/.cache/nord-tools`.
+Node 22 (`.nvmrc`), `git`, `curl`. Na primeira execução, o script baixa o gitleaks 8.18.4 e o actionlint 1.7.1 (as mesmas versões da CI) para `~/.cache/nord-tools/<ferramenta>-<versão>/`. Mudar a versão no script força um novo download.
 
 ## Rodar (caminho do agente)
 
@@ -49,6 +49,6 @@ Qualquer `FALHOU` faz o script sair com 1 e mostra as últimas 20 linhas da ferr
 
 ## Solução de problemas
 
-- **`FALHOU: download gitleaks` / `download actionlint`:** sem acesso de rede ao github.com. Copie os binários para `~/.cache/nord-tools/` manualmente.
+- **`FALHOU: download gitleaks` / `download actionlint`:** sem acesso de rede ao github.com. Copie os binários manualmente para `~/.cache/nord-tools/gitleaks-8.18.4/gitleaks` e `~/.cache/nord-tools/actionlint-1.7.1/actionlint`.
 - **`gitleaks (staged) ... FALHOU` / `leaks found: 1` depois de editar documentação:** um exemplo de chave escrito por inteiro no texto conta como vazamento. Aconteceu com este próprio arquivo, e a CI teria ficado vermelha. Escreva exemplos truncados (`sk-proj-…`). O `--verbose` mostra o arquivo e a linha, com o segredo mascarado.
 - **`guard:repo — arquivos proibidos rastreados pelo git: • .env …`:** `git rm --cached <arquivo>` e confira o `.gitignore`. Se já foi enviado ao GitHub, trate como vazamento (`SECURITY.md`).

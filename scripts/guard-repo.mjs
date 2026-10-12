@@ -5,12 +5,12 @@ import { execFileSync } from "node:child_process";
 
 const forbidden = [
   { pattern: /(^|\/)\.env(\..*)?$/, reason: "arquivo de ambiente (segredos)" },
-  { pattern: /(^|\/)\.dev\.vars$/, reason: "variáveis locais do wrangler (segredos)" },
+  { pattern: /(^|\/)\.dev\.vars(\..*)?$/, reason: "variáveis locais do wrangler (segredos)" },
   { pattern: /(^|\/)\.wrangler\//, reason: "estado local do banco" },
   { pattern: /^data\/initial\.json$/, reason: "dados iniciais pessoais" },
-  { pattern: /\.nord\.json$/, reason: "exportação do plano" },
-  { pattern: /\.(sqlite|sqlite3|db)$/, reason: "cópia de banco" },
-  { pattern: /\.(pem|key|p12)$/, reason: "chave privada" },
+  { pattern: /\.nord\.json$/i, reason: "exportação do plano" },
+  { pattern: /\.(sqlite|sqlite3|db)$/i, reason: "cópia de banco" },
+  { pattern: /\.(pem|key|p12)$/i, reason: "chave privada" },
 ];
 
 const allowed = [/\.env\.example$/];
