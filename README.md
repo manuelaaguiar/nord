@@ -13,17 +13,16 @@ Decisões, revisões e próximos passos ficam no documento único **NORD-Projeto
 
 ## Sumário
 
-1. [O que já funciona](#o-que-já-funciona)
-2. [Começar do zero](#começar-do-zero)
-3. [Arquitetura](#arquitetura)
-4. [Contrato de preservação de dados](#contrato-de-preservação-de-dados)
-5. [Segurança e segredos](#segurança-e-segredos)
-6. [IA e custos](#ia-e-custos)
-7. [Fluxo de contribuição e CI](#fluxo-de-contribuição-e-ci)
-8. [Publicar e reverter](#publicar-e-reverter)
-9. [Recuperação de dados (ensaio)](#recuperação-de-dados-ensaio)
-10. [Robustez do piloto (R1–R8)](#robustez-do-piloto-r1r8)
-11. [Prontidão comercial](#prontidão-comercial)
+1. [Começar do zero](#começar-do-zero)
+2. [Arquitetura](#arquitetura)
+3. [Contrato de preservação de dados](#contrato-de-preservação-de-dados)
+4. [Segurança e segredos](#segurança-e-segredos)
+5. [IA e custos](#ia-e-custos)
+6. [Fluxo de contribuição e CI](#fluxo-de-contribuição-e-ci)
+7. [Publicar e reverter](#publicar-e-reverter)
+8. [Recuperação de dados (ensaio)](#recuperação-de-dados-ensaio)
+9. [Robustez do piloto (R1–R8)](#robustez-do-piloto-r1r8)
+10. [Prontidão comercial](#prontidão-comercial)
 
 ---
 
