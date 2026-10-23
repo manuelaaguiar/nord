@@ -1,0 +1,34 @@
+/* NÓRD typography roles: editorial / interface / technical labels / exact data.
+   Play and Cousine: Google Fonts, SIL Open Font License 1.1, licenses alongside files.
+   Apple system faces are requested from the device only; none are redistributed. */
+@font-face{font-family:Play;src:url('/nord/design/fonts/play-regular.ttf') format('truetype');font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:Cousine;src:url('/nord/design/fonts/cousine-regular.ttf') format('truetype');font-style:normal;font-weight:400;font-display:swap}
+:root{--font-editorial:'Cormorant Garamond',Georgia,serif;--font-ui:-apple-system,BlinkMacSystemFont,'DM Sans','Segoe UI',sans-serif;--font-heading:Play,var(--font-ui);--font-label:Cousine,ui-monospace,monospace;--font-data:Cousine,ui-monospace,SFMono-Regular,Consolas,monospace}
+body{font-family:var(--font-ui);font-size:18px;line-height:1.6;font-weight:400;font-optical-sizing:auto}
+button,input,textarea,select,summary{font-family:var(--font-ui);font-size:16px;line-height:1.5;font-weight:400}
+button,summary{font-weight:500;letter-spacing:.01em}
+h1,h2,h3,.view-heading h2,.planning-section-title h2,.planning-tools h2,.research-card h3,.notebook-heading h2{font-family:var(--font-heading);font-weight:400;font-optical-sizing:auto;letter-spacing:-.015em}
+.planning-heading h1,.journal-feature h3,.luna-welcome h2,.trip-invitation p,.next-copy strong,.notebook-heading h2{font-family:var(--font-editorial);font-weight:500;letter-spacing:-.025em}
+.planning-heading h1{font-size:clamp(46px,5.5vw,72px);line-height:1.03}.journal-feature h3{font-size:clamp(36px,4vw,48px);line-height:1.08}
+
+.logo{font-family:'DM Sans',sans-serif}
+#nav button,.mobile-nav button{font-family:var(--font-ui);font-weight:500;font-size:16px;line-height:24px;letter-spacing:.025em;min-height:48px}
+#nav button.active,.mobile-nav button.active{font-weight:500}
+#nav button{padding:12px 16px}
+.eyebrow,.trip-phase,.trip-phase button,.research-label,.trip-facts small,.trip-invitation small,.next-copy>small,.status-label,.coltitle .meta,.journal-meta .meta,.moneyrow.meta,.guide-label{font-family:var(--font-label);font-weight:400;font-size:16px;line-height:24px;letter-spacing:.035em;font-synthesis:none}
+code,pre,kbd,samp,time,.count,.daydate,.sum,.moneyrow input,.moneyrow select,.trip-facts button strong,.task-footer .meta,.historyrow .meta{font-family:var(--font-data);font-weight:400;font-variant-numeric:tabular-nums lining-nums;font-synthesis:none;letter-spacing:0}
+.daydate,.sum,.moneyrow input,.moneyrow select,.trip-facts button strong{font-size:16px;line-height:24px}
+.research-cost p{font-variant-numeric:tabular-nums lining-nums}
+.planning-task-row strong,.planning-tools strong,.planning-mobile-tools b,.luna-presence strong{font-weight:500}
+.journal-rich.journal-sans{font-family:Arial,sans-serif}.journal-rich.journal-serif{font-family:Georgia,serif}.journal-rich.journal-mono{font-family:'Courier New',monospace}
+@media(max-width:680px){#mobile-nav button{font-size:16px;letter-spacing:0;padding:8px 4px}.trip-phase{flex-wrap:wrap}.trip-phase,.trip-phase button{font-size:16px;line-height:24px;letter-spacing:0}.trip-facts button strong{font-size:16px}.research-label{gap:8px;flex-wrap:wrap}.research-label span{font-size:16px;line-height:24px}.moneyrow{gap:8px}.moneyrow input,.moneyrow select{font-size:16px}}
+
+/* Restrained glass with opaque defaults: text surfaces stay readable without blur. */
+.rail,.mobile-nav,.luna-presence{background:#27272a;border-color:#69645e;box-shadow:inset 0 1px 0 #ffffff18,0 10px 26px #00000018}
+#nav button,.mobile-nav button{border-radius:12px;transition:background-color .14s ease,border-color .14s ease}
+#nav button.active,.mobile-nav button.active{background:#e5d8c6;color:#2d2925;box-shadow:inset 0 1px 0 #ffffff70,0 2px 6px #00000010}
+.more-menu button,.research-warnings{background:#353335;border:1px solid #71695f;box-shadow:inset 0 1px 0 #ffffff12}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.rail,.mobile-nav,.luna-presence{background:rgba(39,39,42,.92);-webkit-backdrop-filter:blur(12px) saturate(115%);backdrop-filter:blur(12px) saturate(115%)}}
+@media(max-width:680px){.rail,.mobile-nav,.luna-presence{-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}.planning-heading h1{font-size:46px}.eyebrow{font-size:14px;letter-spacing:.02em}}
+@media(prefers-reduced-transparency:reduce){.rail,.mobile-nav,.luna-presence,.more-menu button,.research-warnings{background:#303033;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}}
+@media(prefers-reduced-motion:reduce){#nav button,.mobile-nav button{transition:none}}

@@ -8,7 +8,8 @@ Não abra issue pública. Use o relatório privado do GitHub (**Security → Rep
 
 ## Escopo atual
 
-- A proteção de acesso depende da barreira privada do ChatGPT Sites; ainda não existe autorização própria por usuário. Abrir o site ao público está fora do modelo de segurança.
+- A demonstração pública é fail-closed: `lib/demo-boundary.ts` nega APIs, mutações e dados privados. Identidade ou credencial de serviço não atravessam a barreira.
+- Ainda não existe autorização própria por usuário. Mudar a audiência do Sites não cria autenticação no app.
 - `OPENAI_API_KEY` fica somente no gerenciador de segredos do runtime.
 - Nenhuma auditoria externa foi concluída.
 

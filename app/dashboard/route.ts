@@ -1,0 +1,3 @@
+import html from '../../data/dashboard-html';
+export const dynamic='force-dynamic';
+export async function GET(r:Request){return new Response(r.method==='HEAD'?null:html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Permissions-Policy':'microphone=(), camera=(), geolocation=()','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'none'; connect-src 'self' https://open.er-api.com https://api.coingecko.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"}})}

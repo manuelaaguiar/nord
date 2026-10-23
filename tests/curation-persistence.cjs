@@ -1,0 +1,33 @@
+const fs=require('fs'),path=require('path'),ts=require('typescript'),assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite');
+const database=new DatabaseSync(':memory:');for(const name of fs.readdirSync('drizzle').filter(n=>n.endsWith('.sql')).sort())database.exec(fs.readFileSync('drizzle/'+name,'utf8'));
+const DB={prepare(sql){return {bind(...args){return {async first(){return database.prepare(sql).get(...args)||null},async run(){database.prepare(sql).run(...args);return {success:true}},async all(){return {results:database.prepare(sql).all(...args)}}}},async first(){return database.prepare(sql).get()||null},async all(){return {results:database.prepare(sql).all()}}}}};
+const cache={};function load(p){p=path.resolve(p);if(cache[p])return cache[p].exports;const m={exports:{}};cache[p]=m;const code=ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;new Function('require','module','exports',code)(name=>name==='cloudflare:workers'?{env:{DB}}:name.startsWith('.')?(name.endsWith('.json')?require(path.resolve(path.dirname(p),name)):load(path.resolve(path.dirname(p),name+'.ts'))):require(name),m,m.exports);return m.exports}
+const state=load('app/api/state/route.ts'),history=load('app/api/history/route.ts');
+const req=data=>new Request('https://nord.test/api/state',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://nord.test'},body:JSON.stringify(data)});
+(async()=>{
+const start=await (await state.GET()).json();
+const item={id:'qa-source',stage:'antes',category:'preparo',priority:'1',kind:'information',title:'Fixture research',why:'Source checked',location:'Fictional location',costLabel:'Unknown',status:'Suggested',nextAction:'Review',checkedAt:'2026-10-09',details:['Exact note'],sources:[{title:'Official fixture',url:'https://example.org/'}]};
+const curation={updatedAt:'2026-10-09T12:00:00Z',items:[item],warnings:['Not live data']};
+const job={baseVersion:start.version,operationId:crypto.randomUUID(),label:'Add fixture research',state:{...start.state,curation}};
+assert.equal((await state.POST(req(job))).status,200);
+assert.equal((await (await state.POST(req(job))).json()).duplicate,true);
+assert.equal((await state.POST(req({...job,state:{...job.state,curation:{...curation,warnings:['changed']}}}))).status,409);
+let now=await (await state.GET()).json();assert.deepEqual(now.state.curation,curation);assert.deepEqual(now.state.sources,start.state.sources);
+const legacy={baseVersion:now.version,operationId:crypto.randomUUID(),label:'Legacy edit',state:{...now.state,notes:'Fixture change'}};delete legacy.state.curation;
+assert.equal((await state.POST(req(legacy))).status,200);assert.equal((await (await state.POST(req(legacy))).json()).duplicate,true);
+now=await (await state.GET()).json();assert.deepEqual(now.state.curation,curation);
+const changed=structuredClone(curation);changed.items[0].sources[0].url='javascript:alert(1)';
+const save=c=>({baseVersion:now.version,operationId:crypto.randomUUID(),label:'Validation fixture',state:{...now.state,curation:c}});
+assert.equal((await state.POST(req(save(changed)))).status,400);
+const duplicate=structuredClone(curation);duplicate.items.push(item);assert.equal((await state.POST(req(save(duplicate)))).status,400);
+const image=structuredClone(curation),mediaId=crypto.randomUUID();image.items[0].image={mediaId,caption:'Fixture',credit:'Fixture author',sourceUrl:'https://example.org/',licenseUrl:'https://example.org/license'};
+assert.equal((await state.POST(req(save(image)))).status,400);
+database.prepare('INSERT INTO journal_media VALUES (?,?,?,?,?,?,?)').run(mediaId,'image/jpeg','image',4,'test-digest','pending',new Date().toISOString());
+assert.equal((await state.POST(req(save(image)))).status,400);
+database.prepare('UPDATE journal_media SET status=? WHERE id=?').run('ready',mediaId);
+const ready=save(image);assert.equal((await state.POST(req(ready))).status,200);assert.equal((await (await state.POST(req(ready))).json()).duplicate,true);
+assert.equal((await state.POST(req(save(curation)))).status,409);
+const original=await (await history.GET(new Request('https://nord.test/api/history?version=1'))).json();assert.equal(original.state.curation,undefined);
+assert.equal((await (await state.GET()).json()).version,now.version+1);
+console.log('PASS: curated research roundtrip, lost ACK retry, immutable operation, older-client preservation, source/history preservation, HTTPS/unique-ID validation, ready-image reference and conflict rejection. SQLite fixture only.');database.close();
+})().catch(e=>{console.error(e);process.exit(1)});

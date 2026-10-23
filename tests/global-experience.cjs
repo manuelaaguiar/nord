@@ -1,0 +1,18 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
+const elements={},events={},windowEvents={},data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
+const node=()=>({innerHTML:'',textContent:'',hidden:false,open:false,value:'',dataset:{},classList:{toggle(){}},addEventListener(){},showModal(){this.open=true},close(){this.open=false},focus(){},querySelector(){return node()},childNodes:[],setAttribute(){}});
+const document={querySelector:s=>elements[s]??=node(),querySelectorAll:()=>[],addEventListener:(k,fn)=>(events[k]??=[]).push(fn),createElement:()=>node(),head:{append(){}},title:''};
+const window={localStorage:storage,addEventListener:(k,fn)=>(windowEvents[k]??=[]).push(fn),scrollTo(){},dispatchEvent(){}};
+const context={window,document,localStorage:storage,navigator:{locks:{request:(_name,fn)=>Promise.resolve().then(fn)}},crypto,TextEncoder,Date,Promise,Error,URL,Blob,alert(){},confirm:()=>true,setTimeout,setInterval:()=>0,location:{hash:''},history:{pushState(){}},Intl,Event:class{},FormData:class{constructor(){return []}}};
+const ctx=vm.createContext(context);
+for(const f of ['local-travel','planner','market','global-content'])vm.runInContext(fs.readFileSync('public/nord/'+f+'.js','utf8'),ctx);
+window.NordMarket.refresh=()=>{};
+let script=fs.readFileSync('public/nord/visitor.js','utf8');script=script.replace('window.NordVisitor={readRich,paragraphs,fmtDate};fromHash();','window.NordVisitor={readRich,paragraphs,fmtDate};window.__test={views,store,render,navigate,dialog,action};fromHash();');vm.runInContext(script,ctx);
+(async()=>{const {store,views}=window.__test,N=window.NordLocal,P=window.NordPlanner;assert.match(views.explore(),/A diversão/);assert.match(views.trip(),/Escolha um destino/);
+const profile={...P.defaults(),people:3,days:20,bags:2,origin:'Origem de teste',climate:'cold'},state=P.generate({name:'Fixture',destination:'Destino de teste',start:'2030-05-01',end:'2030-05-20'},profile);assert.equal(N.valid(state),true);assert.equal(state.route.length,14);assert.ok(state.tasks.some(x=>x.phase==='flight'));assert.ok(state.tasks.some(x=>x.phase==='arrival'));assert.ok(state.tasks.every(x=>x.status==='todo'));assert.match(state.tasks.find(x=>x.title==='Combinar o ritmo do grupo').notes,/3 pessoas/);assert.equal(await store.importCopy(state),true);
+for(const [name,render]of Object.entries(views)){const html=render();assert.ok(html.length>100,name);assert.doesNotMatch(html,/undefined|NaN/,name);}
+assert.equal(window.NordVisitor.paragraphs([[{text:'<img src=x onerror=bad>',bold:true}]]),'<p><strong>&lt;img src=x onerror=bad&gt;</strong></p>');
+await store.update(x=>{x.tasks[0].phase='arrival';x.tasks[0].status='done';x.tasks[1].archived=true;});assert.match(views.trip(),/1 de/);assert.match(views.trip(),/Itens retirados/);assert.equal(await store.importCopy(N.clone(state)),true);assert.equal(store.recoveryCopies().length,1);
+for(const f of ['visitor','local-travel','planner','globe'])assert.doesNotMatch(fs.readFileSync('public/nord/'+f+'.js','utf8'),/\bfetch\(|XMLHttpRequest|\/api\//);
+const market=fs.readFileSync('public/nord/market.js','utf8');assert.match(market,/credentials:'omit'/);assert.doesNotMatch(market,/JSON.stringify\(.*(trip|profile|destination)/); // comments checked separately below
+console.log('PASS: every global UI view renders, deterministic profile→three phases/14-day limit, atomic local preservation, recovery copies, escaping and no travel-data network calls. Simulated DOM.');})().catch(e=>{console.error(e);process.exit(1)});

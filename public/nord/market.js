@@ -1,0 +1,15 @@
+/* Public reference rates only. No trip/profile fields or cookies leave the device. */
+(()=>{'use strict';
+const FX='https://open.er-api.com/v6/latest/BRL',BTC='https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl&include_last_updated_at=true',KEY='nord.public-rates.v1';
+let data={rates:{BRL:1},date:null,fetchedAt:null,fxNextAt:null,btc:null,btcAt:null,btcFetchedAt:null},loading=false,lastAttempt=0;
+try{const cached=JSON.parse(localStorage.getItem(KEY));if(cached&&cached.rates&&typeof cached.rates==='object')data={...data,...cached};}catch{}
+const positive=x=>typeof x==='number'&&Number.isFinite(x)&&x>0;
+function fxValid(now=Date.now()){return !!data.date&&Number.isFinite(Date.parse(data.date))&&now-Date.parse(data.date)<8*86400000&&Date.parse(data.date)<=now+86400000&&Object.keys(data.rates).some(x=>x!=='BRL'&&positive(data.rates[x]));}
+function btcValid(now=Date.now()){return positive(data.btc)&&Number.isFinite(data.btcAt)&&now-data.btcAt<30*60000&&data.btcAt<=now+60000;}
+function rate(code){if(code==='BRL')return 1;if(code==='BTC')return btcValid()?1/data.btc:null;return fxValid()&&positive(data.rates[code])?data.rates[code]:null;}
+function convert(amount,from,to){const a=rate(from),b=rate(to);return positive(a)&&positive(b)&&Number.isFinite(amount)&&amount>=0?amount/a*b:null;}
+async function get(url){const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);try{const r=await fetch(url,{credentials:'omit',referrerPolicy:'no-referrer',signal:ctrl.signal});if(!r.ok)throw Error('indisponível');return await r.json();}finally{clearTimeout(timer);}}
+function tell(){window.dispatchEvent(new Event('nord:rates'));}
+async function refresh(force=false){const now=Date.now();if(loading||now-lastAttempt<5*60000)return;const needFx=force||!data.fetchedAt||!data.fxNextAt||now>=data.fxNextAt,needBtc=force||!data.btcFetchedAt||now-data.btcFetchedAt>=5*60000;if(!needFx&&!needBtc){tell();return;}loading=true;lastAttempt=now;tell();await Promise.all([needFx?get(FX).then(x=>{if(x?.result!=='success'||x.base_code!=='BRL'||!x.rates||!positive(x.time_last_update_unix)||!positive(x.time_next_update_unix))throw Error();const rates={BRL:1};for(const code of ['USD','EUR','JPY','GBP','CHF','CAD']){if(!positive(x.rates[code]))throw Error();rates[code]=x.rates[code];}data.rates=rates;data.date=new Date(x.time_last_update_unix*1000).toISOString().slice(0,10);data.fetchedAt=Date.now();data.fxNextAt=Math.min(x.time_next_update_unix*1000,Date.now()+48*3600000);}).catch(()=>{}):null,needBtc?get(BTC).then(x=>{if(!positive(x?.bitcoin?.brl)||!positive(x.bitcoin.last_updated_at))throw Error();data.btc=x.bitcoin.brl;data.btcAt=x.bitcoin.last_updated_at*1000;data.btcFetchedAt=Date.now();}).catch(()=>{}):null]);loading=false;try{localStorage.setItem(KEY,JSON.stringify(data));}catch{}tell();}
+window.NordMarket={rate,convert,refresh,fxValid,btcValid,get data(){return data;},get loading(){return loading;}};
+})();
