@@ -1,5 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const window={};vm.runInNewContext(fs.readFileSync('public/nord/local-travel.js','utf8'),{window,crypto,TextEncoder,Date,Promise,Error,JSON});
+vm.runInNewContext(fs.readFileSync('public/nord/field-guide-content.js','utf8'),{window});
 vm.runInNewContext(fs.readFileSync('public/nord/planner.js','utf8'),{window});
 const P=window.NordPlanner,N=window.NordLocal;
 
@@ -10,18 +11,17 @@ assert.equal(trip.trip.destination,'Madrid');
 assert.equal(trip.trip.start,'2026-11-10');
 assert.equal(trip.trip.end,'2026-11-14','start + 5 days fills the missing end date');
 assert.equal(trip.route.length,5);
-assert.equal(trip.route[0].title,'Chegar em Madrid, se instalar e reconhecer o entorno');
+assert.match(trip.route[0].title,/Chegada em Madrid/);
 assert.equal(trip.route[0].date,'2026-11-10');
 assert.equal(trip.route[4].date,'2026-11-14');
-assert.match(trip.route[1].title,/Arte e cultura/);
-assert.match(trip.route[2].title,/Gastronomia/);
+assert.ok(trip.route.some(x=>/Prado|Plaza Mayor/i.test(x.title+' '+x.notes)));
 assert.match(trip.tasks.find(x=>x.title==='Conferir documentos e regras de entrada').notes,/Madrid/);
 assert.match(trip.tasks.find(x=>x.title==='Conferir bilhetes e deslocamento ao aeroporto').notes,/São Paulo → Madrid/);
 assert.ok(trip.tasks.some(x=>x.title==='Combinar o ritmo do grupo'));
 assert.equal(trip.tasks.some(x=>/camadas de roupa|calor e proteção/.test(x.title)),false,'mixed climate has no extra weather task');
-assert.equal(trip.budget.length,0);
+assert.ok(trip.budget.some(x=>x.currency==='EUR'));
 assert.equal(trip.journal.length,0);
-assert.equal(trip.profile.country,'');
+assert.equal(trip.profile.country,'ES');
 
 const ranged=P.generate({name:'Datas curtas',destination:'Madrid',start:'2026-11-10',end:'2026-11-12'},{...madrid,days:10});
 assert.equal(ranged.trip.end,'2026-11-12');
@@ -40,5 +40,5 @@ assert.equal(generic.route[0].title,'Chegar, se instalar e reconhecer o entorno'
 assert.equal(generic.route[0].date,'');
 assert.match(generic.route[1].title,/Descanso/);
 
-assert.doesNotMatch(fs.readFileSync('public/nord/planner.js','utf8'),/\bfetch\(|XMLHttpRequest|\/api\/|Madrid com calma|Plaza Mayor/);
-console.log('PASS: questionnaire maps days/dates/destination/interests/people; missing end is filled; Madrid itinerary stays generic (no editorial places).');
+assert.doesNotMatch(fs.readFileSync('public/nord/planner.js','utf8'),/\bfetch\(|XMLHttpRequest|\/api\//);
+console.log('PASS: questionnaire maps days/dates/destination/interests/people; missing end is filled; Madrid uses the Field Guide when content is loaded.');
