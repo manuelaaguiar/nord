@@ -9,7 +9,7 @@ window.NordMarket.refresh=()=>{};
 let script=fs.readFileSync('public/nord/visitor.js','utf8');
 script=script.replace('window.NordVisitor={readRich,paragraphs,fmtDate,destinations,resolvePlace,searchPlaces,get selected(){return selected;}};fromHash();','window.NordVisitor={readRich,paragraphs,fmtDate,destinations,resolvePlace,searchPlaces,get selected(){return selected;}};window.__test={views,store,render,navigate,action,results};fromHash();');
 vm.runInContext(script,ctx);
-const V=window.NordVisitor,N=window.NordLocal,P=window.NordPlanner;
+const V=window.NordVisitor,P=window.NordPlanner;
 assert.ok(window.NordMarkers.some(x=>x.id==='MAD'&&x.name==='Madrid'&&Number.isFinite(x.lat)&&Number.isFinite(x.lng)));
 assert.ok(window.NordMarkers.some(x=>x.id==='ES'&&x.name==='Espanha'));
 const madrid=V.resolvePlace('Madrid');
