@@ -68,7 +68,10 @@ A interface pública é HTML estático servido em `/dashboard`, com scripts em `
 | `lib/store.ts` | Acesso ao banco e inicialização privada |
 | `public/nord/visitor.js` | Experiência local no navegador |
 | `public/nord/startup.js` | Arranque externo (sem script inline) |
-| `tests/` | Persistência, assistente, demo pública, 404/CSP/datas |
+| `public/nord/field-guide.js` | Guia de campo Madrid–Islândia (Essenciais, Roteiros, Malas) |
+| `public/nord/field-guide-content.js` | Conteúdo editorial do guia (fontes públicas, sem rede) |
+| `public/nord/field-guide.css` | Estilos do guia de campo |
+| `tests/` | Persistência, assistente, demo pública, 404/CSP/datas, guia de campo |
 | `scripts/guard-repo.mjs` | Bloqueia arquivos proibidos no git |
 | `.github/` | CI, Dependabot, CODEOWNERS e modelo de PR |
 

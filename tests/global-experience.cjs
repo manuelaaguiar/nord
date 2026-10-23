@@ -5,7 +5,7 @@ const document={querySelector:s=>elements[s]??=node(),querySelectorAll:()=>[],ad
 const window={localStorage:storage,addEventListener:(k,fn)=>(windowEvents[k]??=[]).push(fn),scrollTo(){},dispatchEvent(){}};
 const context={window,document,localStorage:storage,navigator:{locks:{request:(_name,fn)=>Promise.resolve().then(fn)}},crypto,TextEncoder,Date,Promise,Error,URL,Blob,alert(){},confirm:()=>true,setTimeout,setInterval:()=>0,location:{hash:''},history:{pushState(){}},Intl,Event:class{},FormData:class{constructor(){return []}}};
 const ctx=vm.createContext(context);
-for(const f of ['local-travel','planner','market','global-content'])vm.runInContext(fs.readFileSync('public/nord/'+f+'.js','utf8'),ctx);
+for(const f of ['local-travel','planner','market','global-content','field-guide-content','field-guide'])vm.runInContext(fs.readFileSync('public/nord/'+f+'.js','utf8'),ctx);
 window.NordMarket.refresh=()=>{};
 let script=fs.readFileSync('public/nord/visitor.js','utf8');script=script.replace('window.NordVisitor={readRich,paragraphs,fmtDate};fromHash();','window.NordVisitor={readRich,paragraphs,fmtDate};window.__test={views,store,render,navigate,dialog,action};fromHash();');vm.runInContext(script,ctx);
 (async()=>{const {store,views}=window.__test,N=window.NordLocal,P=window.NordPlanner;assert.match(views.explore(),/A diversão/);assert.match(views.trip(),/Escolha um destino/);

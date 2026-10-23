@@ -12,7 +12,7 @@
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "test": "node tests/persistence.cjs && node tests/assistant.cjs && node tests/journal.cjs && node tests/journal-client.cjs && node tests/journal-media-recovery.cjs && node tests/curation-persistence.cjs && node tests/typography.cjs && node tests/public-demo.cjs && node tests/public-pages.cjs && node tests/local-travel.cjs && node tests/local-recovery.cjs && node tests/global-experience.cjs && node tests/market.cjs && node tests/global-ui-handlers.cjs",
+    "test": "node tests/persistence.cjs && node tests/assistant.cjs && node tests/journal.cjs && node tests/journal-client.cjs && node tests/journal-media-recovery.cjs && node tests/curation-persistence.cjs && node tests/typography.cjs && node tests/public-demo.cjs && node tests/public-pages.cjs && node tests/field-guide.cjs && node tests/local-travel.cjs && node tests/local-recovery.cjs && node tests/global-experience.cjs && node tests/market.cjs && node tests/global-ui-handlers.cjs",
     "typecheck": "tsc --noEmit --incremental false",
     "check:secrets": "node scripts/check-secret-isolation.mjs"
   },
