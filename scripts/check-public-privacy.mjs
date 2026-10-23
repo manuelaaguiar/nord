@@ -1,0 +1,4 @@
+import fs from 'node:fs';import path from 'node:path';
+let count=0;const denied=[/PRIVATE_OWNER_EMAIL_PLACEHOLDER/i,/drive\.google\.com\/(?:file|drive)/i,/mail\.google\.com/i,/outlook\.live\.com\/mail/i,/PRIVATE_FLIGHT_REFERENCE_PLACEHOLDER/i,/PRIVATE_ACTIVITY_DATE_PLACEHOLDER/i,/PRIVATE_(?:STATE|DRAFT)_UNTOUCHED/];
+function scan(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const f=path.join(dir,e.name);if(e.isDirectory())scan(f);else if(/\.(?:html|js|json|css|svg|txt|md|webmanifest)$/.test(f)){const x=fs.readFileSync(f,'utf8');if(denied.some(r=>r.test(x)))throw Error('Private travel marker found in public output; publication blocked.');count++;}}}
+scan('dist/client');console.log(`PASS: ${count} public text assets checked for known private markers and personal-source links.`);

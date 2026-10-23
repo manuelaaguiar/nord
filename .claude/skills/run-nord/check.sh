@@ -36,6 +36,7 @@ if [ -f package.json ]; then
   run "npm run install:ci" npm run install:ci
   run "npm test" npm test
   run "npm run typecheck" npm run typecheck
+  run "npm run lint" npm run lint
   run "npm run build" npm run build
   run "npm run check:secrets" npm run check:secrets
 else

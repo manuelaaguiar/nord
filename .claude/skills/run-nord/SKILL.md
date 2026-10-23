@@ -7,27 +7,16 @@ O NÓRD é verificado por `.claude/skills/run-nord/check.sh`: um espelho local d
 
 Caminhos relativos à raiz do repositório.
 
-> **Estado atual (09/10/2026):** o código do app ainda não foi importado do ChatGPT Sites; não há `package.json`. O script roda as verificações do repositório e **ignora** testes, tipos e build até o código chegar. Ainda não existe caminho verificado para subir o app aqui. Não copie os comandos de execução do README para esta skill antes de executá-los neste container.
+O código v16 está na raiz (`package.json` presente). O script instala dependências e roda testes, tipos, lint, build e varredura de segredos. Publicação continua no OpenAI Sites, não neste script.
 
 ## Pré-requisitos
 
-Node 22 (`.nvmrc`), `git`, `curl`. Na primeira execução, o script baixa o gitleaks 8.18.4 e o actionlint 1.7.1 (as mesmas versões da CI) para `~/.cache/nord-tools/<ferramenta>-<versão>/`. Mudar a versão no script força um novo download.
+Node 22 (`.nvmrc`), Corepack/pnpm 11.25.0, `git`, `curl`. Na primeira execução, o script baixa o gitleaks 8.18.4 e o actionlint 1.7.1 (as mesmas versões da CI) para `~/.cache/nord-tools/<ferramenta>-<versão>/`. Mudar a versão no script força um novo download.
 
 ## Rodar (caminho do agente)
 
 ```bash
 bash .claude/skills/run-nord/check.sh
-```
-
-Saída esperada hoje (exit 0):
-
-```
-• guarda do repositório ... ok
-• gitleaks (histórico) ... ok
-• gitleaks (staged) ... ok
-• actionlint ... ok
-• app: package.json ausente — código do Sites ainda não importado; testes/tipos/build ignorados
-OK
 ```
 
 Qualquer `FALHOU` faz o script sair com 1 e mostra as últimas 20 linhas da ferramenta que falhou.
@@ -38,7 +27,13 @@ Qualquer `FALHOU` faz o script sair com 1 e mostra as últimas 20 linhas da ferr
 | gitleaks (histórico) | segredos em commits já feitos |
 | gitleaks (staged) | segredos em arquivos adicionados (`git add`) e ainda não commitados |
 | actionlint | erros no workflow da CI |
-| npm (quando houver `package.json`) | `install:ci`, `test`, `typecheck`, `build`, `check:secrets` |
+| npm | `install:ci`, `test`, `typecheck`, `lint`, `build`, `check:secrets` |
+
+Para só instalar dependências neste container, sem o instalador do Sites:
+
+```bash
+NORD_SIMPLE_INSTALL=1 npm run install:ci
+```
 
 ## Pegadinhas
 
@@ -50,5 +45,5 @@ Qualquer `FALHOU` faz o script sair com 1 e mostra as últimas 20 linhas da ferr
 ## Solução de problemas
 
 - **`FALHOU: download gitleaks` / `download actionlint`:** sem acesso de rede ao github.com. Copie os binários manualmente para `~/.cache/nord-tools/gitleaks-8.18.4/gitleaks` e `~/.cache/nord-tools/actionlint-1.7.1/actionlint`.
-- **`gitleaks (staged) ... FALHOU` / `leaks found: 1` depois de editar documentação:** um exemplo de chave escrito por inteiro no texto conta como vazamento. Aconteceu com este próprio arquivo, e a CI teria ficado vermelha. Escreva exemplos truncados (`sk-proj-…`). O `--verbose` mostra o arquivo e a linha, com o segredo mascarado.
+- **`gitleaks (staged) ... FALHOU` / `leaks found: 1` depois de editar documentação:** um exemplo de chave escrito por inteiro no texto conta como vazamento. Escreva exemplos truncados (`sk-proj-…`). O `--verbose` mostra o arquivo e a linha, com o segredo mascarado.
 - **`guard:repo — arquivos proibidos rastreados pelo git: • .env …`:** `git rm --cached <arquivo>` e confira o `.gitignore`. Se já foi enviado ao GitHub, trate como vazamento (`SECURITY.md`).

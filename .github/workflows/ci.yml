@@ -45,27 +45,12 @@ jobs:
     needs: guard
     steps:
       - uses: actions/checkout@v4
-      # Os passos do app são ignorados até o código ser importado (package.json ausente).
-      - id: app
-        run: |
-          if [ -f package.json ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "package.json ausente: passos do app ignorados."
-          fi
-      - if: steps.app.outputs.present == 'true'
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-      - if: steps.app.outputs.present == 'true'
-        run: npm run install:ci
-      - if: steps.app.outputs.present == 'true'
-        run: npm test
-      - if: steps.app.outputs.present == 'true'
-        run: npm run typecheck
-      - if: steps.app.outputs.present == 'true'
-        run: npm run build
-      - if: steps.app.outputs.present == 'true'
-        run: npm run check:secrets
+      - run: npm run install:ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run check:secrets
